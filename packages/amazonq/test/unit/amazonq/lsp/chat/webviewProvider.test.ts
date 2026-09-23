@@ -50,4 +50,23 @@ describe('AmazonQChatViewProvider', () => {
         sinon.assert.match(content, 'pairProgrammingAcknowledged: true')
         sinon.assert.match(content, 'deprecationNoticeAcknowledged: false')
     })
+
+    it('forwards an acknowledged deprecation notice independently from the old feature card', async () => {
+        const isPromptEnabled = sandbox.stub()
+        isPromptEnabled.withArgs('amazonQChatDisclaimer').returns(false)
+        isPromptEnabled.withArgs('amazonQChatPairProgramming').returns(true)
+        isPromptEnabled.withArgs('amazonQChatDeprecationNotice').returns(false)
+        sandbox.replaceGetter(AmazonQPromptSettings, 'instance', () => {
+            return {
+                isPromptEnabled,
+            } as unknown as AmazonQPromptSettings
+        })
+
+        const provider = new AmazonQChatViewProvider('', {} as BaseLanguageClient)
+        const content = await (provider as any).getWebviewContent()
+
+        sinon.assert.match(content, 'disclaimerAcknowledged: true')
+        sinon.assert.match(content, 'pairProgrammingAcknowledged: false')
+        sinon.assert.match(content, 'deprecationNoticeAcknowledged: true')
+    })
 })
